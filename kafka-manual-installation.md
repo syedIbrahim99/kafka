@@ -28,6 +28,7 @@ java -version
 
 ```bash
 KAFKA_CLUSTER_ID="$(bin/kafka-storage.sh random-uuid)"
+echo $KAFKA_CLUSTER_ID
 bin/kafka-storage.sh format --standalone -t $KAFKA_CLUSTER_ID -c config/server.properties
 bin/kafka-server-start.sh config/server.properties
 ```
@@ -97,8 +98,9 @@ echo -e "foo\nbar" > test.txt
 ```bash
 bin/connect-standalone.sh config/connect-standalone.properties config/connect-file-source.properties config/connect-file-sink.properties
 ```
+* This will be running in fore-ground.
 
-* File `test.sink.txt` is created.
+* File `test.sink.txt` will be created once the above command is executed.
 
 ```bash
 more test.sink.txt
