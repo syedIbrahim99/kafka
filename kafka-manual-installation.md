@@ -6,6 +6,8 @@
 
 **Kafka tar installation official document link:** [Download Kafka 4.1.0](https://www.apache.org/dyn/closer.cgi?path=/kafka/4.1.0/kafka_2.13-4.1.0.tgz)
 
+**kafka official GitHub link** [Visit Kafka Git Repo](https://github.com/apache/kafka)
+
 ```bash
 mkdir kafka-test
 cd kafka-test
