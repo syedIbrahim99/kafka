@@ -150,6 +150,33 @@ echo "Another line" >> test.txt
 {"schema":{"type":"string","optional":false},"payload":"Another line"}
 ```
 
+* How the `connect-test` topic automatically expects the `test.txt` and how `test.sink.txt` is created dynamically without we explicitly passing any values for them.
+
+* This is a internal behaviour of `Kafka Connect`.
+
+* nano `config/connect-file-source.properties` default file.
+
+```bash
+name=local-file-source
+connector.class=FileStreamSource
+tasks.max=1
+file=test.txt
+topic=connect-test
+```
+* nano `config/connect-file-sink.properties` default file.
+
+```bash
+name=local-file-sink
+connector.class=FileStreamSink
+tasks.max=1
+file=test.sink.txt
+topics=connect-test
+```
+
+* This is how this `connect-test` topic of `kafka Connect` automatically expects the `test.txt` and creates a `test.sink.txt` files.
+
+* And also this `Kafka Connect` scenario is happening with the help of the jar file `connect-file-4.1.0.jar` which have bundled all the source code init it relies in the path `kafka_2.13-4.1.0/libs/connect-file-4.1.0.jar`.
+
 ---
 
 ## Scenario 3: Kafka Streams (Process Events in Real-Time)
@@ -225,6 +252,34 @@ kafka   5
 streams 4
 ```
 
+* In this scenario created two topics named `streams-plaintext-input` `streams-wordcount-output`.
+
+* The second topic is created with the flag `--config cleanup.policy=compact` to stream the latest data.
+
+* Normally Kafka topics keep every message forever (until we delete).
+
+* But here, we don’t need the history of old data, it just reflects the latest data.
+
+* Then ran the `wordcountDemo` starting command, which will be running as a process in `fore-ground`.
+
+* Then ran a `producer` for `streams-plaintext-input` and typed some messaged in new terminal.
+
+* Then ran a `consumer` for `streams-wordcount-output` and got the typed messages in a word count fromat with the help of `wordcountDemo` java program running in a seperate terminal.
+
+* Here one thing we can notice is, the first topic `streams-plaintext-input` and the second topic `streams-wordcount-output` doesn't have any connection between each other and how the message we typed in `streams-plaintext-input` topic's producer is reflected in the consumer of `streams-wordcount-output`.
+
+* It is already hardcoded in the java program which we have executed, so that program will be expecting two topcics from this names, one as a `producer` and other as a `consumer`.
+
+* These all are pre-builted when we installed `kafka`.
+
+* we can see the java program to see the logic by extracting the jar file  in the path `kafka_2.13-4.1.0/libs/kafka-streams-examples-4.1.0.jar`.
+
+* The extracted tar will have the `java` codes as `.class` extension.
+
+* So we can see the codes in the `GitHub` repositories.
+
+**kafka official GitHub link** [Visit Kafka Git Repo](https://github.com/apache/kafka/blob/trunk/streams/examples/src/main/java/org/apache/kafka/streams/examples/wordcount/WordCountDemo.java)
+
 ---
 
 ## Terminate the Kafka Environment
@@ -232,5 +287,5 @@ streams 4
 ```bash
 # Stop all consumers, producers, and brokers using Ctrl+C
 rm -rf /tmp/kafka-logs /tmp/kraft-combined-logs
-rm -rf /tmp/connect.offsets
+rm -rf /tmp/connect.offsets    # Deleting the saved offsets (bookmark)
 ```
