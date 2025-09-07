@@ -41,6 +41,8 @@ bin/kafka-server-start.sh config/server.properties
 
 ### Create a topic
 
+* PWD - /home/syed/kafka-test/kafka_2.13-4.1.0
+
 ```bash
 bin/kafka-topics.sh --create --topic quickstart-events --bootstrap-server localhost:9092
 bin/kafka-topics.sh --describe --topic quickstart-events --bootstrap-server localhost:9092
@@ -80,6 +82,8 @@ This is my third event
 ## Scenario 2: Kafka Connect (Import/Export Data)
 
 ### Configure Kafka Connect
+
+* PWD - /home/syed/kafka-test/kafka_2.13-4.1.0
 
 ```bash
 nano config/connect-standalone.properties
@@ -148,103 +152,75 @@ echo "Another line" >> test.txt
 
 ## Scenario 3: Kafka Streams (Process Events in Real-Time)
 
-### Create output topic
+**Official documentation link:** [Run Kafka Streams Demo Application](https://kafka.apache.org/documentation/streams/quickstart)
+
+## Run Kafka Streams Demo Application
+
+### Prepare input topic and start Kafka producer
+
+* PWD - /home/syed/kafka-test/kafka_2.13-4.1.0
 
 ```bash
-bin/kafka-topics.sh --create --topic output-topic --bootstrap-server localhost:9092
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic streams-plaintext-input
+
+bin/kafka-topics.sh --create --bootstrap-server localhost:9092 --replication-factor 1 --partitions 1 --topic streams-wordcount-output --config cleanup.policy=compact
+
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe
+
+bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+
+bin/kafka-run-class.sh org.apache.kafka.streams.examples.wordcount.WordCountDemo
 ```
 
-### Prepare Kafka Streams application
+* This command starts the "wordcountDemo" application and runs in fore-ground.
+
+### New terminal:
+
+* pwd - /home/syed/kafka-test/kafka_2.13-4.1.0
 
 ```bash
-cd ..
-mkdir kafka-streams-app
-cd kafka-streams-app
-mkdir -p src/main/java/org/example
-nano src/main/java/org/example/WordCountApp.java
+bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic streams-plaintext-input
+>all streams lead to kafka
 ```
 
-**WordCountApp.java:**
+### New terminal:
 
-```java
-package org.example;
-
-import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.KafkaStreams;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Produced;
-
-import java.util.Arrays;
-import java.util.Properties;
-
-public class WordCountApp {
-    public static void main(String[] args) {
-        Properties props = new Properties();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "wordcount-app");
-        props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-        props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.String().getClass());
-
-        StreamsBuilder builder = new StreamsBuilder();
-        KStream<String, String> textLines = builder.stream("quickstart-events");
-
-        KTable<String, Long> wordCounts = textLines
-                .flatMapValues(line -> Arrays.asList(line.toLowerCase().split(" ")))
-                .groupBy((keyIgnored, word) -> word)
-                .count();
-
-        wordCounts.toStream().to("output-topic", Produced.with(Serdes.String(), Serdes.Long()));
-
-        KafkaStreams streams = new KafkaStreams(builder.build(), props);
-        streams.start();
-    }
-}
-```
-
-### Compile Java program
+* pwd - /home/syed/kafka-test/kafka_2.13-4.1.0
 
 ```bash
-javac -cp "/home/syed/kafka-test/kafka_2.13-4.1.0/libs/*" -d . src/main/java/org/example/WordCountApp.java
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic streams-wordcount-output --from-beginning --property print.key=true --property print.value=true --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer
+all     2
+streams 3
+lead    2
+to      2
+kafka   4
 ```
 
-* Program should be running in foreground.
+## continuation
 
-### Consume output from Kafka Streams
+### New terminal:
+
+* pwd - /home/syed/kafka-test/kafka_2.13-4.1.0
 
 ```bash
-bin/kafka-console-consumer.sh \
-  --topic output-topic \
-  --from-beginning \
-  --bootstrap-server localhost:9092 \
-  --property print.key=true \
-  --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer \
-  --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer
+bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic streams-plaintext-input
+>all streams lead to kafka
+>hello kafka streams
 ```
+### New terminal:
 
-Sample output:
+* pwd - /home/syed/kafka-test/kafka_2.13-4.1.0
 
-```
-first   1
-this    2
-is      2
-my      2
-second  1
-event   2
-hello   1
-kafka   1
-syed    1
+```bash
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic streams-wordcount-output --from-beginning --property print.key=true --property print.value=true --property key.deserializer=org.apache.kafka.common.serialization.StringDeserializer --property value.deserializer=org.apache.kafka.common.serialization.LongDeserializer
+all     2
+streams 3
+lead    2
+to      2
+kafka   4
 hello   2
-world   1
-```
-
-* we can also produce new messages:
-
-```bash
-bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server localhost:9092
->hello world
+kafka   5
+streams 4
 ```
 
 ---
@@ -254,4 +230,5 @@ bin/kafka-console-producer.sh --topic quickstart-events --bootstrap-server local
 ```bash
 # Stop all consumers, producers, and brokers using Ctrl+C
 rm -rf /tmp/kafka-logs /tmp/kraft-combined-logs
+rm -rf /tmp/connect.offsets
 ```
